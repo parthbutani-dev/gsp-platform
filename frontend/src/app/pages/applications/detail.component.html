@@ -1,0 +1,657 @@
+<a routerLink="/" class="text-sm text-blue-700 hover:underline">← Applications</a>
+
+@if (loading()) {
+  <p class="mt-8 text-slate-500">Loading…</p>
+} @else if (app()) {
+  <div class="mt-4 flex flex-wrap items-start justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold">{{ studentName() }}</h1>
+      <p class="text-slate-600">
+        {{ app()?.statusLabel ?? app()?.currentStage }} · {{ app()?.course?.name }} ·
+        {{ app()?.university?.name }}
+      </p>
+    </div>
+    <span class="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
+      {{ app()?.status ?? 'active' }}
+    </span>
+  </div>
+
+  @if (isAgent()) {
+    <section class="card mt-6">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 class="font-semibold">Application progress</h2>
+          @if (app()?.progress; as p) {
+            <p class="mt-1 text-sm text-slate-600">
+              Step {{ p.currentStepNumber }} of {{ p.totalSteps }} ·
+              {{ p.completedCount }} completed · {{ p.remainingCount }} remaining
+            </p>
+          }
+        </div>
+        <span class="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
+          {{ app()?.statusLabel }}
+        </span>
+      </div>
+
+      @if (app()?.progress?.terminalLabel) {
+        <p
+          class="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+        >
+          {{ app()?.progress?.terminalLabel }}
+        </p>
+      }
+
+      @if (app()?.progress; as p) {
+        <div class="agent-progress-scroll mt-5 overflow-x-auto pb-1">
+          <ol
+            class="agent-progress flex min-w-full items-start px-1"
+            aria-label="Application stages"
+          >
+            @for (step of p.steps; track step.stage; let first = $first; let last = $last) {
+              <li class="agent-progress__step flex min-w-[4.75rem] flex-1 flex-col items-center">
+                <div class="flex w-full items-center">
+                  @if (!first) {
+                    <span
+                      class="agent-progress__line h-0.5 flex-1"
+                      [class.agent-progress__line--completed]="
+                        p.steps[$index - 1].state === 'completed'
+                      "
+                    ></span>
+                  } @else {
+                    <span class="flex-1"></span>
+                  }
+                  <span
+                    class="agent-progress__dot flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold"
+                    [class.agent-progress__dot--completed]="step.state === 'completed'"
+                    [class.agent-progress__dot--current]="step.state === 'current'"
+                    [class.agent-progress__dot--upcoming]="step.state === 'upcoming'"
+                    [title]="step.label"
+                  >
+                    @if (step.state === 'completed') {
+                      ✓
+                    } @else {
+                      {{ $index + 1 }}
+                    }
+                  </span>
+                  @if (!last) {
+                    <span
+                      class="agent-progress__line h-0.5 flex-1"
+                      [class.agent-progress__line--completed]="step.state === 'completed'"
+                    ></span>
+                  } @else {
+                    <span class="flex-1"></span>
+                  }
+                </div>
+                <p
+                  class="mt-2 w-full px-0.5 text-center text-[10px] font-medium leading-tight sm:text-xs"
+                  [class.text-green-800]="step.state === 'completed'"
+                  [class.text-blue-900]="step.state === 'current'"
+                  [class.text-slate-500]="step.state === 'upcoming'"
+                >
+                  {{ step.label }}
+                </p>
+                @if (step.state === 'current') {
+                  <p class="mt-0.5 text-center text-[10px] text-blue-700">Current</p>
+                }
+              </li>
+            }
+          </ol>
+        </div>
+      }
+
+      @if (app()?.suggestions?.length) {
+        <div class="mt-2 border-t border-slate-200 pt-4">
+          <p class="text-sm font-medium text-slate-700">What you can do next</p>
+          <ul class="mt-2 list-disc pl-5 text-sm text-slate-700">
+            @for (s of app()?.suggestions; track s) {
+              <li>{{ s }}</li>
+            }
+          </ul>
+        </div>
+      }
+    </section>
+  } @else {
+    <section class="card mt-6">
+      <h2 class="font-semibold">Stage pipeline</h2>
+      <ol class="mt-4 flex flex-wrap gap-1">
+        @for (stage of pipelineStages; track stage) {
+          <li
+            class="rounded px-2 py-1 text-xs font-medium"
+            [class]="
+              stage === app()?.currentStage
+                ? 'bg-blue-700 text-white'
+                : pipelineIndex(stage) < pipelineIndex(app()?.currentStage ?? '')
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-slate-100 text-slate-500'
+            "
+          >
+            {{ labelStage(stage) }}
+          </li>
+        }
+      </ol>
+    </section>
+  }
+
+  <div class="mt-6 grid gap-6 lg:grid-cols-2">
+    @if (!isAgent() && forward(); as fwd) {
+      <section class="card lg:col-span-2">
+        <h2 class="font-semibold">Advance stage</h2>
+        @if (fwd.allowedRoleLabels; as roleLabels) {
+          @if (roleLabels.length) {
+          <p class="mt-1 text-xs text-slate-500">
+            This step can be performed by:
+            <span class="font-medium text-slate-700">{{ roleLabels.join(' or ') }}</span>
+          </p>
+          }
+        }
+        <button
+          type="button"
+          class="btn-primary mt-3"
+          [disabled]="!fwd.allowed || transitioning()"
+          (click)="advanceStage()"
+        >
+          Advance to {{ fwd.label }} →
+        </button>
+        @if (!fwd.allowed && fwd.reasons.length) {
+          <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-red-600">
+            @for (reason of fwd.reasons; track reason) {
+              <li>{{ reason }}</li>
+            }
+          </ul>
+        }
+      </section>
+    }
+
+    @if (!isAgent()) {
+      <section class="card">
+        <h2 class="font-semibold">Contextual actions</h2>
+        <div class="mt-3 flex flex-wrap gap-2">
+          @for (a of actions(); track a.type) {
+            <button
+              type="button"
+              class="text-sm"
+              [class]="
+                a.destructive ? 'btn-secondary border-red-300 text-red-700' : 'btn-secondary'
+              "
+              [disabled]="busyAction()"
+              [title]="a.destructive ? 'Requires confirmation' : ''"
+              (click)="runAction(a)"
+            >
+              {{ a.label }}
+            </button>
+          }
+        </div>
+      </section>
+    }
+
+    <section class="card">
+      <h2 class="font-semibold">Required documents</h2>
+      <p class="mt-1 text-xs text-slate-500">
+        Checklist items for stage rules. Agents upload here; staff can mark uploaded.
+      </p>
+      <ul class="mt-3 space-y-2">
+        @for (d of app()?.requiredDocuments ?? []; track d.key) {
+          <li class="flex items-center justify-between text-sm">
+            <label class="flex items-center gap-2">
+              <input
+                type="checkbox"
+                [checked]="d.uploaded"
+                [disabled]="d.uploaded"
+                (change)="uploadDoc(d.key)"
+              />
+              <span [class.text-green-700]="d.uploaded">{{ d.label }}</span>
+            </label>
+            @if (d.uploaded) {
+              <span class="text-xs text-green-600">✓</span>
+            }
+          </li>
+        }
+      </ul>
+    </section>
+
+    <section class="card">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <h2 class="font-semibold">Attachments</h2>
+        @if (showAddAttachment()) {
+          <button
+            type="button"
+            class="btn-secondary text-xs"
+            [disabled]="busyAction()"
+            (click)="addAttachment()"
+          >
+            Add attachment
+          </button>
+        }
+      </div>
+      <p class="mt-1 text-xs text-slate-500">
+        Extra files on the application record. Visible to staff; agents see files on their own
+        applications.
+      </p>
+      @if (app()?.attachments?.length) {
+        <ul class="mt-3 space-y-2 text-sm">
+          @for (f of app()?.attachments; track f.id ?? $index) {
+            <li class="rounded border px-3 py-2">
+              <span class="font-medium">{{ f.fileName }}</span>
+              @if (f.description) {
+                <span class="text-slate-500"> — {{ f.description }}</span>
+              }
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="mt-3 text-sm text-slate-500">No attachments yet.</p>
+      }
+    </section>
+
+    @if (!isAgent()) {
+      <section class="card">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h2 class="font-semibold">Tasks</h2>
+          @if (showAddTask()) {
+            <button
+              type="button"
+              class="btn-secondary text-xs"
+              [disabled]="busyAction()"
+              (click)="addTask()"
+            >
+              Add task
+            </button>
+          }
+        </div>
+        <p class="mt-1 text-xs text-slate-500">Internal follow-ups (staff only).</p>
+        @if (app()?.tasks?.length) {
+          <ul class="mt-3 space-y-2 text-sm">
+            @for (t of app()?.tasks; track t.id ?? $index) {
+              <li class="flex items-center gap-2 rounded border px-3 py-2">
+                <input
+                  type="checkbox"
+                  [checked]="t.completed"
+                  (change)="toggleTask(t.id!, $any($event.target).checked)"
+                />
+                <span [class.line-through]="t.completed" [class.text-slate-400]="t.completed">{{
+                  t.title
+                }}</span>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="mt-3 text-sm text-slate-500">No tasks yet.</p>
+        }
+      </section>
+    }
+
+    @if (showDecisionForm()) {
+      <section class="card">
+        <h2 class="font-semibold">University decision</h2>
+        <p class="mt-1 text-xs text-slate-500">
+          Required before advancing to Deposit (assessment rule).
+        </p>
+        @if (app()?.decisionOutcome) {
+          <p class="mt-2 text-sm">
+            Recorded: <strong>{{ app()?.decisionOutcome }}</strong>
+          </p>
+        }
+        <div class="mt-3 flex flex-wrap gap-2">
+          <button type="button" class="btn-secondary text-sm" (click)="recordDecision('unconditional')">
+            Unconditional offer
+          </button>
+          <button type="button" class="btn-secondary text-sm" (click)="recordDecision('conditional')">
+            Conditional offer
+          </button>
+          <button type="button" class="btn-secondary text-sm" (click)="recordDecision('rejected')">
+            Rejected
+          </button>
+        </div>
+      </section>
+    }
+
+    @if (showReviewNote()) {
+      <section class="card">
+        <h2 class="font-semibold">Admission review note</h2>
+        <p class="mt-1 text-xs text-slate-500">Required before advancing to Decision.</p>
+        <form class="mt-3 space-y-2" [formGroup]="reviewNoteForm" (ngSubmit)="saveReviewNote()">
+          <textarea
+            class="input-field min-h-[80px] w-full"
+            formControlName="reviewNote"
+            placeholder="Review note for this application…"
+          ></textarea>
+          <button type="submit" class="btn-primary text-sm">Save review note</button>
+        </form>
+      </section>
+    }
+
+    @if (showAi()) {
+      <section class="card lg:col-span-2 border-blue-200 bg-blue-50/50">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h2 class="font-semibold text-blue-900">AI assessment</h2>
+          <button
+            type="button"
+            class="btn-secondary text-xs"
+            [disabled]="refreshingAi()"
+            (click)="loadAi(app()!.id!, true)"
+          >
+            {{ refreshingAi() ? 'Refreshing…' : 'Refresh assessment' }}
+          </button>
+        </div>
+        @if (app()?.aiAssessment; as assessment) {
+          @if (assessment.status === 'pending') {
+            <p class="mt-2 text-sm text-slate-600">Assessment in progress…</p>
+          } @else if (assessment.status === 'failed') {
+            <p class="mt-2 text-sm font-medium text-red-800">Assessment failed</p>
+            <p class="mt-1 text-sm text-red-700">
+              {{ assessment.errorMessage ?? 'The AI provider did not return a result.' }}
+            </p>
+            <p class="mt-2 text-sm text-slate-600">
+              Use “Refresh assessment” to retry. Manual review can proceed regardless.
+            </p>
+          } @else if (assessment.result) {
+            <span
+              class="mt-3 inline-block rounded-full px-3 py-1 text-sm font-semibold"
+              [class]="recommendationClass(assessment.result.recommendation)"
+            >
+              {{ assessment.result.recommendation ?? 'NEEDS_ATTENTION' }}
+            </span>
+            <p class="mt-3 text-sm">{{ assessment.result.summary }}</p>
+            @if (assessment.result.flags?.length) {
+              <p class="mt-2 text-sm font-medium">Flags</p>
+              <ul class="list-disc pl-5 text-sm">
+                @for (f of assessment.result.flags; track f) {
+                  <li>{{ f }}</li>
+                }
+              </ul>
+            }
+            @if (assessment.result.risks?.length) {
+              <p class="mt-2 text-sm font-medium">Risks</p>
+              <ul class="list-disc pl-5 text-sm">
+                @for (r of assessment.result.risks; track r) {
+                  <li>{{ r }}</li>
+                }
+              </ul>
+            }
+            @if (assessment.result.missingDocuments?.length) {
+              <p class="mt-2 text-sm font-medium">Missing documents</p>
+              <ul class="list-disc pl-5 text-sm">
+                @for (m of assessment.result.missingDocuments; track m) {
+                  <li>{{ m }}</li>
+                }
+              </ul>
+            }
+          }
+        } @else {
+          <p class="mt-2 text-sm text-slate-600">No assessment yet.</p>
+        }
+        <p class="mt-4 text-sm font-semibold text-amber-900">
+          ⚠ AI-generated — advisory only. Final decision rests with the reviewing officer.
+        </p>
+      </section>
+    }
+
+    <section class="card lg:col-span-2" id="application-notes">
+      <h2 class="font-semibold">Notes</h2>
+      <p class="mt-1 text-xs text-slate-500">
+        Use this section to add notes. “Internal” is staff-only and hidden from agents.
+      </p>
+      <form class="mt-3 flex gap-2" [formGroup]="noteForm" (ngSubmit)="addNote()">
+        <input class="input-field flex-1" formControlName="body" placeholder="Note text" />
+        @if (!isAgent()) {
+          <label class="flex items-center gap-1 text-sm">
+            <input type="checkbox" formControlName="internal" /> Internal
+          </label>
+        }
+        <button type="submit" class="btn-primary">Add</button>
+      </form>
+      <ul class="mt-4 space-y-2">
+        @for (n of app()?.notes ?? []; track n.id ?? $index) {
+          <li class="rounded border p-2 text-sm">
+            {{ n.body }}
+            @if (n.internal) {
+              <span class="ml-2 text-xs text-slate-500">(internal)</span>
+            }
+          </li>
+        }
+      </ul>
+    </section>
+
+    @if (!isAgent() && app()?.stageHistory?.length) {
+      <section class="card lg:col-span-2">
+        <h2 class="font-semibold">Stage history</h2>
+        <p class="mt-1 text-xs text-slate-500">
+          Each row is a stage transition, in order. Skipped steps apply to offer_exists entry
+          applications.
+        </p>
+        <ol class="mt-3 space-y-2 text-sm text-slate-600">
+          @for (h of app()?.stageHistory; track $index) {
+            <li class="rounded border border-slate-100 px-3 py-2">
+              <span class="font-medium text-slate-800">
+                {{ labelStage(h.from) }} → {{ labelStage(h.to) }}
+              </span>
+              @if (h.skipped) {
+                <span class="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">
+                  Skipped
+                </span>
+              }
+              <span class="mt-0.5 block text-xs text-slate-500">
+                {{ h.at | date: 'medium' }}
+                @if (h.reason) {
+                  · {{ h.reason }}
+                }
+              </span>
+            </li>
+          }
+        </ol>
+      </section>
+    }
+  </div>
+
+}
+
+@if (actionDialog(); as dialog) {
+  <div
+    class="action-dialog-backdrop"
+    role="presentation"
+    (click)="closeActionDialog()"
+    (keydown.escape)="closeActionDialog()"
+  >
+    <div
+      class="action-dialog card"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-labelledby]="'action-dialog-title'"
+      (click)="$event.stopPropagation()"
+    >
+      <h2 id="action-dialog-title" class="text-lg font-semibold">{{ dialog.title }}</h2>
+
+      @if (dialog.destructive) {
+        <p class="mt-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+          This action may be irreversible. Please confirm and provide a reason.
+        </p>
+      }
+
+      @if (dialog.mode === 'defer') {
+        <form class="mt-4 space-y-4" [formGroup]="deferForm" (ngSubmit)="submitActionDialog()">
+          <div>
+            <label class="mb-1 block text-sm font-medium" for="defer-year">Intake year</label>
+            <select id="defer-year" class="input-field" formControlName="deferredIntakeYear">
+              @for (y of deferIntakeYears; track y) {
+                <option [value]="y">{{ y }}</option>
+              }
+            </select>
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-medium" for="defer-month">Intake month</label>
+            <select id="defer-month" class="input-field" formControlName="intakeMonth">
+              @for (m of deferIntakeMonths; track m.value) {
+                <option [value]="m.value">{{ m.label }}</option>
+              }
+            </select>
+            <p class="mt-1 text-xs text-slate-500">
+              Deferred term will be e.g. “September {{ deferForm.value.deferredIntakeYear ?? '2026' }}”.
+            </p>
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-medium" for="defer-reason">Reason for deferral</label>
+            <textarea
+              id="defer-reason"
+              class="input-field min-h-[88px] w-full"
+              formControlName="reason"
+              placeholder="At least 10 characters — e.g. student requested later intake"
+            ></textarea>
+            @if (dialogFieldError('defer', 'reason'); as err) {
+              <p class="form-error">{{ err }}</p>
+            }
+          </div>
+          <div class="flex justify-end gap-2 pt-2">
+            <button type="button" class="btn-secondary" [disabled]="dialogSubmitting()" (click)="closeActionDialog()">
+              Cancel
+            </button>
+            <button type="submit" class="btn-primary" [disabled]="dialogSubmitting()">
+              {{ dialogSubmitting() ? 'Saving…' : 'Defer application' }}
+            </button>
+          </div>
+        </form>
+      }
+
+      @if (dialog.mode === 'reason') {
+        <form class="mt-4 space-y-4" [formGroup]="reasonForm" (ngSubmit)="submitActionDialog()">
+          <div>
+            <label class="mb-1 block text-sm font-medium" for="action-reason">{{ dialog.reasonLabel }}</label>
+            <textarea
+              id="action-reason"
+              class="input-field min-h-[88px] w-full"
+              formControlName="reason"
+              [placeholder]="'At least ' + dialog.reasonMinLength + ' characters'"
+            ></textarea>
+            @if (dialogFieldError('reason', 'reason'); as err) {
+              <p class="form-error">{{ err }}</p>
+            }
+          </div>
+          <div class="flex justify-end gap-2 pt-2">
+            <button type="button" class="btn-secondary" [disabled]="dialogSubmitting()" (click)="closeActionDialog()">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="btn-primary"
+              [class]="dialog.destructive ? 'bg-red-700 hover:bg-red-800' : ''"
+              [disabled]="dialogSubmitting()"
+            >
+              {{ dialogSubmitting() ? 'Saving…' : 'Confirm' }}
+            </button>
+          </div>
+        </form>
+      }
+
+      @if (dialog.mode === 'change_course') {
+        <form class="mt-4 space-y-4" [formGroup]="changeCourseForm" (ngSubmit)="submitActionDialog()">
+          <div>
+            <label class="mb-1 block text-sm font-medium" for="course-name">Course name</label>
+            <input id="course-name" class="input-field" formControlName="courseName" />
+            @if (dialogFieldError('changeCourse', 'courseName'); as err) {
+              <p class="form-error">{{ err }}</p>
+            }
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-medium" for="course-level">Course level</label>
+            <select id="course-level" class="input-field" formControlName="courseLevel">
+              @for (level of courseLevels; track level.value) {
+                <option [value]="level.value">{{ level.label }}</option>
+              }
+            </select>
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-medium" for="university-name">University</label>
+            <input
+              id="university-name"
+              class="input-field"
+              formControlName="universityName"
+              placeholder="Leave blank to keep current university"
+            />
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-medium" for="change-reason">Reason for change</label>
+            <textarea
+              id="change-reason"
+              class="input-field min-h-[88px] w-full"
+              formControlName="reason"
+              placeholder="At least 10 characters"
+            ></textarea>
+            @if (dialogFieldError('changeCourse', 'reason'); as err) {
+              <p class="form-error">{{ err }}</p>
+            }
+          </div>
+          <div class="flex justify-end gap-2 pt-2">
+            <button type="button" class="btn-secondary" [disabled]="dialogSubmitting()" (click)="closeActionDialog()">
+              Cancel
+            </button>
+            <button type="submit" class="btn-primary" [disabled]="dialogSubmitting()">
+              {{ dialogSubmitting() ? 'Saving…' : 'Update course' }}
+            </button>
+          </div>
+        </form>
+      }
+
+      @if (dialog.mode === 'attachment') {
+        <form class="mt-4 space-y-4" [formGroup]="attachmentForm" (ngSubmit)="submitActionDialog()">
+          <div>
+            <label class="mb-1 block text-sm font-medium" for="file-name">File name</label>
+            <input id="file-name" class="input-field" formControlName="fileName" placeholder="e.g. passport-scan.pdf" />
+            @if (dialogFieldError('attachment', 'fileName'); as err) {
+              <p class="form-error">{{ err }}</p>
+            }
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-medium" for="file-desc">Description (optional)</label>
+            <input id="file-desc" class="input-field" formControlName="description" />
+          </div>
+          <div class="flex justify-end gap-2 pt-2">
+            <button type="button" class="btn-secondary" [disabled]="dialogSubmitting()" (click)="closeActionDialog()">
+              Cancel
+            </button>
+            <button type="submit" class="btn-primary" [disabled]="dialogSubmitting()">
+              {{ dialogSubmitting() ? 'Saving…' : 'Add attachment' }}
+            </button>
+          </div>
+        </form>
+      }
+
+      @if (dialog.mode === 'task') {
+        <form class="mt-4 space-y-4" [formGroup]="taskForm" (ngSubmit)="submitActionDialog()">
+          <div>
+            <label class="mb-1 block text-sm font-medium" for="task-title">Task title</label>
+            <input id="task-title" class="input-field" formControlName="title" placeholder="e.g. Request updated transcript" />
+            @if (dialogFieldError('task', 'title'); as err) {
+              <p class="form-error">{{ err }}</p>
+            }
+          </div>
+          <div class="flex justify-end gap-2 pt-2">
+            <button type="button" class="btn-secondary" [disabled]="dialogSubmitting()" (click)="closeActionDialog()">
+              Cancel
+            </button>
+            <button type="submit" class="btn-primary" [disabled]="dialogSubmitting()">
+              {{ dialogSubmitting() ? 'Saving…' : 'Add task' }}
+            </button>
+          </div>
+        </form>
+      }
+
+      @if (dialog.mode === 'decision_conditions') {
+        <form class="mt-4 space-y-4" [formGroup]="decisionConditionsForm" (ngSubmit)="submitActionDialog()">
+          <p class="text-sm text-slate-600">Optional conditions for this conditional offer.</p>
+          <div>
+            <label class="mb-1 block text-sm font-medium" for="conditions">Conditions</label>
+            <textarea
+              id="conditions"
+              class="input-field min-h-[88px] w-full"
+              formControlName="conditions"
+              placeholder="e.g. Final degree certificate required before enrolment"
+            ></textarea>
+          </div>
+          <div class="flex justify-end gap-2 pt-2">
+            <button type="button" class="btn-secondary" (click)="closeActionDialog()">Cancel</button>
+            <button type="submit" class="btn-primary">Record conditional offer</button>
+          </div>
+        </form>
+      }
+    </div>
+  </div>
+}

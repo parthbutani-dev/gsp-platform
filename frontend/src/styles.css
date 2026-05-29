@@ -1,0 +1,120 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-primary: #1e40af;
+  --color-primary-hover: #1d4ed8;
+}
+
+@layer components {
+  .input-field {
+    @apply w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20;
+  }
+  .input-field-danger {
+    @apply border-red-500 focus:border-red-500 focus:ring-red-500/20;
+  }
+  .label-required::after {
+    content: ' *';
+    @apply text-red-600;
+  }
+  .btn-primary {
+    @apply rounded-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50;
+  }
+  .form-error {
+    @apply mt-1 text-sm text-red-600;
+  }
+  .card {
+    @apply rounded-xl border border-slate-200 bg-white p-6 shadow-sm;
+  }
+  .role-switcher {
+    @apply w-full cursor-pointer rounded-lg border border-slate-300 bg-white py-2 pl-3 pr-8 text-sm font-medium text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:cursor-wait disabled:opacity-60;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    background-size: 1.1rem;
+    appearance: none;
+  }
+  .app-shell {
+    @apply flex min-h-screen bg-slate-100;
+  }
+  .app-sidebar {
+    @apply flex w-56 shrink-0 flex-col border-r border-slate-200 bg-white px-4 py-5;
+  }
+  .sidebar-brand {
+    @apply text-xl font-bold text-blue-800 no-underline hover:text-blue-900;
+  }
+  .sidebar-tagline {
+    @apply mt-0.5 text-xs text-slate-500;
+  }
+  .sidebar-section {
+    @apply mt-6;
+  }
+  .sidebar-label {
+    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500;
+  }
+  .sidebar-hint {
+    @apply mt-2 text-xs text-slate-500;
+  }
+  .sidebar-nav {
+    @apply mt-6 flex flex-col gap-1 border-t border-slate-100 pt-4;
+  }
+  .sidebar-nav a {
+    @apply rounded-lg px-3 py-2 text-sm font-medium text-slate-700 no-underline hover:bg-slate-100;
+  }
+  .sidebar-nav-active {
+    @apply bg-blue-50 text-blue-800 hover:bg-blue-50!;
+  }
+  .sidebar-nav-cta {
+    @apply mt-2 border border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100!;
+  }
+  .app-main {
+    @apply flex min-w-0 flex-1 flex-col;
+  }
+  .app-topbar {
+    @apply flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-6 py-3;
+  }
+  .topbar-user {
+    @apply flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm;
+  }
+  .topbar-user-label {
+    @apply text-slate-500;
+  }
+  .topbar-user-name {
+    @apply font-semibold text-slate-900;
+  }
+  .topbar-user-role {
+    @apply rounded bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-600;
+  }
+  .topbar-actions {
+    @apply flex items-center gap-2;
+  }
+  .app-content {
+    @apply flex-1 px-6 py-6;
+  }
+  .agent-progress-scroll {
+    @apply -mx-1;
+  }
+  .agent-progress__dot--completed {
+    @apply bg-green-100 text-green-800 ring-2 ring-green-200;
+  }
+  .agent-progress__dot--current {
+    @apply bg-blue-700 text-white ring-4 ring-blue-100;
+  }
+  .agent-progress__dot--upcoming {
+    @apply bg-slate-100 text-slate-500 ring-2 ring-slate-200;
+  }
+  .agent-progress__line--completed {
+    @apply bg-green-300;
+  }
+  .agent-progress__line:not(.agent-progress__line--completed) {
+    @apply bg-slate-200;
+  }
+  .action-dialog-backdrop {
+    @apply fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4;
+  }
+  .action-dialog {
+    @apply max-h-[90vh] w-full max-w-md overflow-y-auto shadow-xl;
+  }
+}

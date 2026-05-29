@@ -1,0 +1,201 @@
+<a routerLink="/" class="text-sm text-blue-700 hover:underline">← Back</a>
+<h1 class="mt-2 text-2xl font-bold">New application</h1>
+<p class="mt-1 text-sm text-slate-600">Enter student and programme details to start the application pipeline.</p>
+
+<form class="card mt-6 w-full space-y-8" [formGroup]="form" (ngSubmit)="submit()">
+  <!-- Student -->
+  <fieldset formGroupName="student">
+    <legend class="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
+      Student
+    </legend>
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div>
+        <label class="label-required mb-1 block text-sm font-medium" for="firstName">First name</label>
+        <input
+          id="firstName"
+          class="input-field"
+          [class.input-field-danger]="showFieldError('student.firstName')"
+          formControlName="firstName"
+          autocomplete="given-name"
+        />
+        @if (showFieldError('student.firstName')) {
+          <p class="form-error">{{ fieldError('student.firstName') }}</p>
+        }
+      </div>
+      <div>
+        <label class="label-required mb-1 block text-sm font-medium" for="lastName">Last name</label>
+        <input
+          id="lastName"
+          class="input-field"
+          [class.input-field-danger]="showFieldError('student.lastName')"
+          formControlName="lastName"
+          autocomplete="family-name"
+        />
+        @if (showFieldError('student.lastName')) {
+          <p class="form-error">{{ fieldError('student.lastName') }}</p>
+        }
+      </div>
+      <div class="sm:col-span-2 lg:col-span-1">
+        <label class="label-required mb-1 block text-sm font-medium" for="email">Email</label>
+        <input
+          id="email"
+          type="email"
+          class="input-field"
+          [class.input-field-danger]="showFieldError('student.email')"
+          formControlName="email"
+          autocomplete="email"
+        />
+        @if (showFieldError('student.email')) {
+          <p class="form-error">{{ fieldError('student.email') }}</p>
+        }
+      </div>
+      <div>
+        <label class="label-required mb-1 block text-sm font-medium" for="dateOfBirth">Date of birth</label>
+        <input
+          id="dateOfBirth"
+          type="date"
+          class="input-field"
+          [class.input-field-danger]="showFieldError('student.dateOfBirth')"
+          formControlName="dateOfBirth"
+        />
+        @if (showFieldError('student.dateOfBirth')) {
+          <p class="form-error">{{ fieldError('student.dateOfBirth') }}</p>
+        }
+      </div>
+      <div class="sm:col-span-2 lg:col-span-1">
+        <label class="label-required mb-1 block text-sm font-medium" for="nationality">Nationality</label>
+        <input
+          id="nationality"
+          class="input-field"
+          [class.input-field-danger]="showFieldError('student.nationality')"
+          formControlName="nationality"
+        />
+        @if (showFieldError('student.nationality')) {
+          <p class="form-error">{{ fieldError('student.nationality') }}</p>
+        }
+      </div>
+    </div>
+  </fieldset>
+
+  <!-- Programme -->
+  <fieldset>
+    <legend class="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
+      Programme
+    </legend>
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="lg:col-span-2" formGroupName="course">
+        <label class="label-required mb-1 block text-sm font-medium" for="courseName">Course</label>
+        <input
+          id="courseName"
+          class="input-field"
+          [class.input-field-danger]="showFieldError('course.name')"
+          formControlName="name"
+          placeholder="e.g. BSc Business"
+        />
+        @if (showFieldError('course.name')) {
+          <p class="form-error">{{ fieldError('course.name') }}</p>
+        }
+      </div>
+      <div formGroupName="course">
+        <label class="mb-1 block text-sm font-medium" for="courseLevel">Level</label>
+        <select id="courseLevel" class="input-field" formControlName="level">
+          <option value="undergraduate">Undergraduate</option>
+          <option value="postgraduate">Postgraduate</option>
+          <option value="foundation">Foundation</option>
+        </select>
+      </div>
+      <div formGroupName="university">
+        <label class="label-required mb-1 block text-sm font-medium" for="universityName">University</label>
+        <input
+          id="universityName"
+          class="input-field"
+          [class.input-field-danger]="showFieldError('university.name')"
+          formControlName="name"
+          placeholder="e.g. University of Leeds"
+        />
+        @if (showFieldError('university.name')) {
+          <p class="form-error">{{ fieldError('university.name') }}</p>
+        }
+      </div>
+      <div class="sm:col-span-2 lg:col-span-1">
+        <span class="label-required mb-1 block text-sm font-medium">Intake</span>
+        <div class="grid grid-cols-2 gap-2">
+          <select
+            id="intakeMonth"
+            class="input-field"
+            [class.input-field-danger]="showIntakeError()"
+            formControlName="intakeMonth"
+            aria-label="Intake month"
+          >
+            <option value="" disabled>Month</option>
+            @for (m of intakeMonths; track m.value) {
+              <option [value]="m.value">{{ m.label }}</option>
+            }
+          </select>
+          <select
+            id="intakeYear"
+            class="input-field"
+            [class.input-field-danger]="showIntakeError()"
+            formControlName="intakeYear"
+            aria-label="Intake year"
+          >
+            <option value="" disabled>Year</option>
+            @for (y of intakeYears; track y) {
+              <option [value]="y">{{ y }}</option>
+            }
+          </select>
+        </div>
+        @if (showIntakeError()) {
+          <p class="form-error">{{ intakeFieldError() }}</p>
+        }
+      </div>
+    </div>
+  </fieldset>
+
+  <!-- Entry -->
+  <fieldset>
+    <legend class="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
+      Application entry
+    </legend>
+    <div
+      class="grid gap-4"
+      [class]="isOfferExistsEntry() ? 'lg:grid-cols-3' : 'lg:grid-cols-2 xl:max-w-2xl'"
+    >
+      <div [class]="isOfferExistsEntry() ? '' : 'lg:col-span-2 xl:col-span-1'">
+        <label class="mb-1 block text-sm font-medium" for="entryPoint">Entry point</label>
+        <select id="entryPoint" class="input-field" formControlName="entryPoint">
+          <option [value]="EntryPoints.STANDARD">Standard — starts at New Application</option>
+          <option [value]="EntryPoints.OFFER_EXISTS">Offer exists — starts at Decision</option>
+        </select>
+      </div>
+      @if (isOfferExistsEntry()) {
+        <div class="lg:col-span-2">
+          <label class="label-required mb-1 block text-sm font-medium" for="offerDetails">Offer details</label>
+          <textarea
+            id="offerDetails"
+            class="input-field min-h-[4.5rem] resize-y"
+            [class.input-field-danger]="showFieldError('offerDetails')"
+            formControlName="offerDetails"
+            placeholder="Describe the existing university offer (required for offer-exists entry)…"
+          ></textarea>
+          @if (showFieldError('offerDetails')) {
+            <p class="form-error">{{ fieldError('offerDetails') }}</p>
+          }
+        </div>
+      }
+    </div>
+  </fieldset>
+
+  @if (error) {
+    <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+      <p>{{ error }}</p>
+    </div>
+  }
+
+  <div class="flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 pt-6">
+    <a routerLink="/" class="btn-secondary">Cancel</a>
+    <button type="submit" class="btn-primary min-w-[10rem]" [disabled]="loading">
+      {{ loading ? 'Creating…' : 'Create application' }}
+    </button>
+  </div>
+</form>

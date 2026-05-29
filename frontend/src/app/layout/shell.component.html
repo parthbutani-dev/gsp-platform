@@ -1,0 +1,64 @@
+<div class="app-shell">
+  <aside class="app-sidebar" aria-label="Application navigation">
+    <a routerLink="/" class="sidebar-brand">GSP</a>
+    <p class="sidebar-tagline">Global Students Pathway</p>
+
+    @if (auth.user()) {
+      <div class="sidebar-section">
+        <label class="sidebar-label" for="role-switcher">Role switcher</label>
+        <select
+          id="role-switcher"
+          class="role-switcher role-switcher--sidebar"
+          [ngModel]="selectedRoleEmail()"
+          (ngModelChange)="onRoleSelect($event)"
+          [disabled]="switching()"
+        >
+          @for (r of roles; track r.email) {
+            <option [value]="r.email">{{ r.label }}</option>
+          }
+        </select>
+        @if (switching()) {
+          <p class="sidebar-hint">Switching role…</p>
+        }
+      </div>
+
+      <nav class="sidebar-nav">
+        <a routerLink="/" routerLinkActive="sidebar-nav-active" [routerLinkActiveOptions]="{ exact: true }">
+          Applications
+        </a>
+        @if (canCreateApplication()) {
+          <a
+            routerLink="/applications/new"
+            routerLinkActive="sidebar-nav-active"
+            class="sidebar-nav-cta"
+          >
+            New application
+          </a>
+        }
+      </nav>
+    }
+  </aside>
+
+  <div class="app-main">
+    <header class="app-topbar">
+      @if (auth.user(); as u) {
+        <div class="topbar-user">
+          <span class="topbar-user-label">Signed in as</span>
+          <span class="topbar-user-name">{{ u.name }}</span>
+          <span class="topbar-user-role">{{ u.role }}</span>
+        </div>
+      }
+      <div class="topbar-actions">
+        @if (auth.user()) {
+          <button type="button" class="btn-secondary text-sm" (click)="logout()">Logout</button>
+        }
+      </div>
+    </header>
+
+    <main class="app-content">
+      <router-outlet />
+    </main>
+  </div>
+</div>
+
+<app-toast />

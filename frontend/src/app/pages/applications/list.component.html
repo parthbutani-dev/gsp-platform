@@ -1,0 +1,39 @@
+<h1 class="text-2xl font-bold">Applications</h1>
+<p class="mt-1 text-sm text-slate-600">Role-filtered view of student applications</p>
+
+@if (loading()) {
+  <p class="mt-8 text-slate-500">Loading…</p>
+} @else if (apps().length === 0) {
+  <p class="mt-8 text-slate-500">No applications found.</p>
+} @else {
+  <div class="card mt-6 overflow-x-auto">
+    <table class="w-full text-left text-sm">
+      <thead>
+        <tr class="border-b text-slate-500">
+          <th class="py-2 pr-4">Student</th>
+          <th class="py-2 pr-4">Course</th>
+          <th class="py-2 pr-4">University</th>
+          <th class="py-2 pr-4">Stage</th>
+          <th class="py-2 pr-4">Status</th>
+          <th class="py-2"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (app of apps(); track app.id) {
+          <tr class="border-b border-slate-100">
+            <td class="py-3 pr-4 font-medium">{{ app.studentName }}</td>
+            <td class="py-3 pr-4">{{ app.course ?? '—' }}</td>
+            <td class="py-3 pr-4">{{ app.university ?? '—' }}</td>
+            <td class="py-3 pr-4">{{ app.statusLabel ?? app.currentStage }}</td>
+            <td class="py-3 pr-4">{{ app.status ?? '—' }}</td>
+            <td class="py-3">
+              <a [routerLink]="['/applications', app.id]" class="text-blue-700 hover:underline"
+                >View</a
+              >
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
