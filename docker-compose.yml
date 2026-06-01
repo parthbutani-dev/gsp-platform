@@ -1,0 +1,18 @@
+# Local MongoDB for development and client demos (no Atlas account required).
+services:
+  mongodb:
+    image: mongo:7
+    container_name: gsp-mongodb
+    ports:
+      - '27017:27017'
+    volumes:
+      - gsp_mongo_data:/data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  gsp_mongo_data:

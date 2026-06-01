@@ -137,9 +137,9 @@ export async function runSeed() {
   });
 
   const qaApp = await Application.findOne({ 'student.lastName': 'Okafor' });
-  if (qaApp) void aiAssessmentService.runForStage(qaApp._id.toString(), Stages.QA_REVIEW);
+  if (qaApp) await aiAssessmentService.runForStage(qaApp._id.toString(), Stages.QA_REVIEW);
   const reviewApp = await Application.findOne({ 'student.lastName': 'Sharma' });
-  if (reviewApp) void aiAssessmentService.runForStage(reviewApp._id.toString(), Stages.APP_REVIEW);
+  if (reviewApp) await aiAssessmentService.runForStage(reviewApp._id.toString(), Stages.APP_REVIEW);
 
   return {
     message: 'Seed complete',
@@ -153,9 +153,12 @@ async function main() {
     process.exit(1);
   }
   await mongoose.connect(env.mongoUri);
-  const result = await runSeed();
-  console.log(JSON.stringify(result, null, 2));
-  await mongoose.disconnect();
+  try {
+    const result = await runSeed();
+    console.log(JSON.stringify(result, null, 2));
+  } finally {
+    await mongoose.disconnect();
+  }
 }
 
 if (require.main === module) {

@@ -7,8 +7,12 @@
     "frontend"
   ],
   "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "docker:up": "docker compose up -d --wait",
+    "docker:down": "docker compose down",
+    "docker:reset": "docker compose down -v && docker compose up -d",
     "build:shared": "npm run build -w @gsp/shared",
-    "dev:backend": "npm run dev -w @gsp/backend",
+    "dev:backend": "npm run build:shared && npm run dev -w @gsp/backend",
     "dev:frontend": "npm run start -w @gsp/frontend",
     "dev": "npm run dev:backend & npm run dev:frontend",
     "seed": "npm run seed -w @gsp/backend",

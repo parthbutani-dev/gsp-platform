@@ -22,23 +22,44 @@ Prototype of **Global Students Pathway (GSP)**: a workflow-driven student applic
 
 ## Setup
 
+**Prerequisites:** Node.js 20+, npm, and [Docker](https://docs.docker.com/get-docker/) (for local MongoDB).
+
 ```bash
 cd gsp-platform
-cp .env.example .env
-# Set MONGODB_URI and JWT_ACCESS_SECRET
+cp .env.example .env   # skip if you already have .env
 
-npm install
-npm run build -w @gsp/shared
-npm run seed -w @gsp/backend
+npm run setup          # Docker MongoDB + install + build shared + seed
 
 # Terminal 1 — API (port 3000)
-npm run dev -w @gsp/backend
+npm run dev:backend
 
 # Terminal 2 — UI (port 4200, proxies /api)
-npm run dev -w @gsp/frontend
+npm run dev:frontend
+```
+
+Manual steps (same as `setup`):
+
+```bash
+npm run docker:up
+npm install
+npm run build -w @gsp/shared
+npm run seed
 ```
 
 Open http://localhost:4200
+
+### Database (local Docker)
+
+| Command | Purpose |
+| ------- | ------- |
+| `npm run setup` | One-shot: MongoDB (waits until healthy), install, build, seed |
+| `npm run docker:up` | Start MongoDB and wait until healthy |
+| `npm run docker:down` | Stop MongoDB (data kept in Docker volume) |
+| `npm run docker:reset` | Wipe DB volume and start fresh (re-run `npm run seed` after) |
+
+No MongoDB Atlas account or cloud credentials are required for local testing. Do not commit `.env`; use `.env.example` only.
+
+If you already have a `.env` pointing at Atlas, set `MONGODB_URI=mongodb://127.0.0.1:27017/gsp` and run `npm run docker:up` before seeding.
 
 ## Demo users (password: `demo1234`)
 
